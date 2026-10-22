@@ -9,6 +9,17 @@ set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_EXTENSIONS ON)
 
+# VERSION is the one place the module version lives; info.c gets it from here.
+file(STRINGS "${CMAKE_SOURCE_DIR}/VERSION" MONITORING_VERSION LIMIT_COUNT 1)
+string(STRIP "${MONITORING_VERSION}" MONITORING_VERSION)
+if (NOT MONITORING_VERSION MATCHES "^([0-9]+)\\.([0-9]+)\\.([0-9]+)$")
+	message(FATAL_ERROR "VERSION must be MAJOR.MINOR.PATCH, got '${MONITORING_VERSION}'")
+endif ()
+set(MONITORING_VERSION_MAJOR ${CMAKE_MATCH_1})
+set(MONITORING_VERSION_MINOR ${CMAKE_MATCH_2})
+set(MONITORING_VERSION_PATCH ${CMAKE_MATCH_3})
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/VERSION")
+
 # Point at another Authum checkout to build against unreleased Authum changes:
 #   cmake -S . -B build -DAUTHUM_DIR=/path/to/raspad-authum
 set(AUTHUM_DIR "${CMAKE_SOURCE_DIR}/lib/authum" CACHE PATH "Authum source tree")
@@ -42,7 +53,11 @@ target_include_directories(monitoring PRIVATE
 	"${CMAKE_SOURCE_DIR}/include"
 )
 
-target_compile_definitions(monitoring PRIVATE linux LINUX)
+target_compile_definitions(monitoring PRIVATE linux LINUX
+	MONITORING_VERSION_MAJOR=${MONITORING_VERSION_MAJOR}
+	MONITORING_VERSION_MINOR=${MONITORING_VERSION_MINOR}
+	MONITORING_VERSION_PATCH=${MONITORING_VERSION_PATCH}
+)
 
 if (NOT MSVC)
 	target_compile_options(monitoring PRIVATE

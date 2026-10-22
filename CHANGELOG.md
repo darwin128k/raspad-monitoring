@@ -16,6 +16,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   and `authum monitoring list`
 - `monitoring_list.ini` sample in the release zip
 
+### Changed
+
+- The module version comes from the `VERSION` file (CMake passes it to
+  `info.c`), so the version Authum logs can no longer drift from the release
+
 ## [0.1.0] - 2026-10-22
 
 ### Added
