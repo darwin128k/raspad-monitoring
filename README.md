@@ -117,6 +117,8 @@ git submodule update --init --recursive
 cmake -S . -B build-linux32 -G Ninja -DCMAKE_BUILD_TYPE=Release
 cmake --build build-linux32 --target monitoring
 # → build-linux32/modules/monitoring/monitoring.so
+cmake --install build-linux32 --component monitoring --prefix <gamedir>
+# → <gamedir>/addons/authum/modules/monitoring/{monitoring.so,monitoring.cfg,monitorings.ini}
 ```
 
 ```bash
