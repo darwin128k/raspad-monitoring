@@ -8,7 +8,7 @@
 #include <stdint.h>
 
 /*
- * Known monitoring pollers (monitoring_list.ini) for info_answer_scope = list:
+ * Known monitoring pollers (monitorings.ini) for info_answer_scope = list:
  * only these get answers that skip the Steam challenge. One address or CIDR
  * per line ("1.2.3.4", "1.2.3.0/24"); text after it, and lines starting with
  * '#' or ';', are comments. Loaded at start and on `authum monitoring reload`.

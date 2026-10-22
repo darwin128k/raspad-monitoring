@@ -65,7 +65,7 @@ default because its reply is several KB for a 10-byte query.
 ### Answer only known monitorings
 
 `info_answer_scope = list` narrows the direct answers to the pollers listed in
-[`monitoring_list.ini`](monitoring_list.ini) (IP or CIDR per line). Everyone
+[`monitorings.ini`](monitorings.ini) (IP or CIDR per line). Everyone
 else gets Steam's challenge, so a spoofed query cannot be reflected through the
 server at all.
 
@@ -74,7 +74,7 @@ with `info_answer_scope = all` and `debug = 1`: `authum.log` names every source
 that got a direct answer. Put those in the list, then:
 
 ```
-authum monitoring reload   # re-read monitoring_list.ini, no restart
+authum monitoring reload   # re-read monitorings.ini, no restart
 authum monitoring list     # what is loaded
 ```
 
@@ -84,7 +84,7 @@ authum monitoring list     # what is loaded
 2. Unpack into the game dir so you get:
    - `addons/authum/modules/monitoring/monitoring.so`
    - `addons/authum/modules/monitoring/monitoring.cfg`
-   - `addons/authum/modules/monitoring/monitoring_list.ini` (used with `info_answer_scope = list`)
+   - `addons/authum/modules/monitoring/monitorings.ini` (used with `info_answer_scope = list`)
 3. Add `monitoring` to `addons/authum/modules.list`.
 4. Restart HLDS. `authum.log` should say
    `hook installed on Steam_HandleIncomingPacket`.

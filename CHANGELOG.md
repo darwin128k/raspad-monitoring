@@ -10,11 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - `info_answer_scope = all|list`: with `list`, only the monitoring pollers in
-  `monitoring_list.ini` (IP or CIDR per line) get direct answers; everyone else
+  `monitorings.ini` (IP or CIDR per line) get direct answers; everyone else
   goes through Steam's challenge, so the server cannot be used as a reflector
 - Console commands `authum monitoring reload` (re-read the list, no restart)
   and `authum monitoring list`
-- `monitoring_list.ini` sample in the release zip
+- `monitorings.ini` sample in the release zip
 
 ### Changed
 
