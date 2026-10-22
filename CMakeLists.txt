@@ -84,3 +84,13 @@ if (CMAKE_BUILD_TYPE STREQUAL "Release" OR CMAKE_BUILD_TYPE STREQUAL "MinSizeRel
 			COMMENT "strip monitoring.so")
 	endif ()
 endif ()
+
+# Game-dir layout Authum loads from; monitoring.cfg / monitorings.ini in the
+# repo root are the only copies. Pack with:
+#   cmake --install build-linux32 --component monitoring --prefix <gamedir>
+set(MONITORING_INSTALL_DIR "addons/authum/modules/monitoring")
+install(TARGETS monitoring
+	LIBRARY DESTINATION "${MONITORING_INSTALL_DIR}" COMPONENT monitoring
+	RUNTIME DESTINATION "${MONITORING_INSTALL_DIR}" COMPONENT monitoring)
+install(FILES monitoring.cfg monitorings.ini
+	DESTINATION "${MONITORING_INSTALL_DIR}" COMPONENT monitoring)
