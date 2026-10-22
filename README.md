@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/logo.png" alt="monitoring" width="220">
+</p>
+
 <h1 align="center">monitoring</h1>
 
 <p align="center">
