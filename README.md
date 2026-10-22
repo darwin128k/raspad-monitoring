@@ -54,8 +54,13 @@ puts a detour on the first one:
 | anything else | Steam, unchanged | — |
 
 `C` and `m` carry the server address as their first field; HLDS bound to every
-interface writes `0.0.0.0` there, so monitoring puts `public_ip` (or the `ip`
-cvar) in instead.
+interface writes `0.0.0.0` there, so monitoring puts the real one in instead:
+`public_ip`, else the `ip` cvar, else the machine's one external IPv4 from its
+interfaces (behind NAT there is none — then set `public_ip`).
+
+The rest of `I` that the engine does not know is read where Steam reads it:
+`appid` from `steam_appid.txt`, `version` from `PatchVersion` in
+`<gamedir>/steam.inf` plus `/Stdio`. Values set in `monitoring.cfg` win.
 
 None of these answers needs a challenge, so each can be aimed at a spoofed
 address. Direct answers are rate-limited per source IP (`ratelimit_per_ip`);

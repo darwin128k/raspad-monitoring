@@ -4,6 +4,7 @@
 #include <monitoring/config.h>
 #include <monitoring/hook.h>
 #include <monitoring/host.h>
+#include <monitoring/server.h>
 
 #include <authum/host.h>
 #include <authum/logger.h>
@@ -44,6 +45,7 @@ monitoring_authum_start(authum_host_t *host)
     authum_logger_info(&g_monitoring_logger, "start — module dir: %s",
                        authum_path_as_cstr(authum_host_env_module(&g_monitoring_host)));
 
+    monitoring_server_resolve();
     monitoring_command_load_list();
 
     if (!monitoring_hook_install())

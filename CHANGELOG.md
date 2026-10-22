@@ -18,6 +18,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- `appid` and `version` default to empty and are read where Steam reads them:
+  `steam_appid.txt` in the HLDS root and `PatchVersion` in `<gamedir>/steam.inf`
+  (+ `/Stdio`); set them in `monitoring.cfg` only to override
+- `public_ip` empty and no `ip` cvar: the machine's one external IPv4 from its
+  interfaces (`<authum/net.h>`, Authum 66836ca); the start log lists the
+  internal and external addresses it saw
 - The module version comes from the `VERSION` file (CMake passes it to
   `info.c`), so the version Authum logs can no longer drift from the release
 
