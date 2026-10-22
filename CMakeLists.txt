@@ -24,6 +24,8 @@ add_library(monitoring MODULE
 	src/authum/module.c
 	src/authum/bridge.c
 	src/monitoring/config.c
+	src/monitoring/allowlist.c
+	src/monitoring/command.c
 	src/monitoring/ratelimit.c
 	src/monitoring/reply.c
 	src/monitoring/hook.c

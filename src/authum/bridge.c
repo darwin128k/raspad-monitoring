@@ -1,5 +1,6 @@
 #include <monitoring/bridge.h>
 
+#include <monitoring/command.h>
 #include <monitoring/config.h>
 #include <monitoring/hook.h>
 #include <monitoring/host.h>
@@ -43,14 +44,25 @@ monitoring_authum_start(authum_host_t *host)
     authum_logger_info(&g_monitoring_logger, "start — module dir: %s",
                        authum_path_as_cstr(authum_host_env_module(&g_monitoring_host)));
 
+    monitoring_command_load_list();
+
     if (!monitoring_hook_install())
     {
         authum_logger_error(&g_monitoring_logger, "hook install FAILED — queries left to Steam");
         return authum_bool_false;
     }
 
-    authum_logger_info(&g_monitoring_logger, "ready (info_answer=%s)",
-                       monitoring_info_answer_name(g_monitoring_config.info_answer));
+    /* Without the commands facade the module still works; only reload / list are gone. */
+    if (authum_null_eq(authum_host_commands(&g_monitoring_host)) ||
+        !monitoring_command_start(&g_monitoring_host))
+    {
+        authum_logger_warning(&g_monitoring_logger,
+                              "console commands unavailable (authum monitoring reload / list)");
+    }
+
+    authum_logger_info(&g_monitoring_logger, "ready (info_answer=%s scope=%s)",
+                       monitoring_info_answer_name(g_monitoring_config.info_answer),
+                       monitoring_info_answer_scope_name(g_monitoring_config.info_answer_scope));
     return authum_bool_true;
 }
 
