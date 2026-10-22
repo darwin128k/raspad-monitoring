@@ -29,6 +29,7 @@
 #include <monitoring/allowlist.h>
 #include <monitoring/ratelimit.h>
 #include <monitoring/reply.h>
+#include <monitoring/server.h>
 
 #include <authum/detour.h>
 #include <authum/logger.h>
@@ -118,7 +119,8 @@ monitoring_hook_server_port(void)
     return 0u;
 }
 
-/* "ip:port" for 'C' / 'm': public_ip, else the `ip` cvar; 0 = keep the engine's. */
+/* "ip:port" for 'C' / 'm': public_ip, else the `ip` cvar, else the machine's
+ * one external IPv4; 0 = keep the engine's. */
 static int
 monitoring_hook_public_address(char *buf, size_t buf_size)
 {
@@ -129,7 +131,11 @@ monitoring_hook_public_address(char *buf, size_t buf_size)
     {
         ip = g_cvar_variable_string("ip");
     }
-    if (!ip || !ip[0] || strcmp(ip, "localhost") == 0 || strcmp(ip, "0.0.0.0") == 0 || !port)
+    if (!ip || !ip[0] || strcmp(ip, "localhost") == 0 || strcmp(ip, "0.0.0.0") == 0)
+    {
+        ip = monitoring_server_detected_ip();
+    }
+    if (!ip[0] || !port)
     {
         return 0;
     }

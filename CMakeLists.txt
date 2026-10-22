@@ -39,6 +39,7 @@ add_library(monitoring MODULE
 	src/monitoring/command.c
 	src/monitoring/ratelimit.c
 	src/monitoring/reply.c
+	src/monitoring/server.c
 	src/monitoring/hook.c
 )
 

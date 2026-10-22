@@ -16,8 +16,8 @@ monitoring_config_t g_monitoring_config = {
     .legacy_players = authum_bool_true,
     .legacy_rules = authum_bool_false,
     .public_ip = "",
-    .appid = 10,
-    .version = "1.1.2.7/Stdio",
+    .appid = 0,    /* 0 = steam_appid.txt (server.c) */
+    .version = "", /* "" = steam.inf PatchVersion + "/Stdio" */
     .ratelimit_per_ip = 5,
     .debug = authum_bool_false,
 
@@ -155,9 +155,9 @@ monitoring_config_load(void)
 {
     monitoring_config_apply_file("monitoring.cfg");
     monitoring_config_apply_file("monitoring.local.cfg");
-    if (g_monitoring_config.appid <= 0 || g_monitoring_config.appid > 0xffff)
+    if (g_monitoring_config.appid < 0 || g_monitoring_config.appid > 0xffff)
     {
-        g_monitoring_config.appid = 10;
+        g_monitoring_config.appid = 0;
     }
     if (g_monitoring_config.ratelimit_per_ip < 0)
     {
