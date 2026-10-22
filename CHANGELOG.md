@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-10-22
+
 ### Added
 
 - Authum client module (ABI 0.3) for classic HLDS (engine build 10211)
@@ -23,3 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `<authum/detour.h>`); `AUTHUM_DIR` can point a build at a local Authum
 - Per-IP rate limit for direct answers (`ratelimit_per_ip`)
 - Linux i386 CI + Release: Authum module zip (`addons/authum/modules/monitoring/`)
+- Logo (`assets/logo.png`) in the README header
+
+[Unreleased]: https://github.com/darwin128k/raspad-monitoring/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/darwin128k/raspad-monitoring/releases/tag/v0.1.0
