@@ -9,9 +9,9 @@
 #include <authum/null.h>
 
 static const authum_command_def_t g_monitoring_commands[] = {
-    {"reload", authum_null, "re-read monitoring_list (known monitoring pollers)",
+    {"reload", authum_null, "re-read monitorings.ini (known monitoring pollers)",
      monitoring_command_reload, authum_null},
-    {"list", authum_null, "show info_answer_scope and the loaded monitoring_list",
+    {"list", authum_null, "show info_answer_scope and the loaded monitorings",
      monitoring_command_list, authum_null},
 };
 
@@ -26,7 +26,7 @@ monitoring_command_start(const authum_host_t *host)
 int
 monitoring_command_load_list(void)
 {
-    int loaded = monitoring_allowlist_load(g_monitoring_config.monitoring_list);
+    int loaded = monitoring_allowlist_load(g_monitoring_config.monitorings);
 
     if (loaded < 0)
     {
@@ -34,12 +34,12 @@ monitoring_command_load_list(void)
         {
             authum_logger_warning(&g_monitoring_logger,
                                   "%s missing — info_answer_scope=list answers nobody directly",
-                                  g_monitoring_config.monitoring_list);
+                                  g_monitoring_config.monitorings);
         }
         return loaded;
     }
     authum_logger_info(&g_monitoring_logger, "%s: %d monitoring poller(s)",
-                       g_monitoring_config.monitoring_list, loaded);
+                       g_monitoring_config.monitorings, loaded);
     return loaded;
 }
 
@@ -52,14 +52,12 @@ monitoring_command_reload(const authum_command_t *cmd, authum_ptr user)
     loaded = monitoring_command_load_list();
     if (loaded < 0)
     {
-        authum_command_printf(cmd, "monitoring: cannot open %s",
-                              g_monitoring_config.monitoring_list);
+        authum_command_printf(cmd, "monitoring: cannot open %s", g_monitoring_config.monitorings);
     }
     else
     {
         authum_command_printf(cmd, "monitoring: %s reloaded, %d entr%s",
-                              g_monitoring_config.monitoring_list, loaded,
-                              loaded == 1 ? "y" : "ies");
+                              g_monitoring_config.monitorings, loaded, loaded == 1 ? "y" : "ies");
     }
     return authum_bool_true;
 }
@@ -74,8 +72,7 @@ monitoring_command_list(const authum_command_t *cmd, authum_ptr user)
     authum_command_printf(cmd, "monitoring: info_answer=%s scope=%s list=%s (%u entries)",
                           monitoring_info_answer_name(g_monitoring_config.info_answer),
                           monitoring_info_answer_scope_name(g_monitoring_config.info_answer_scope),
-                          g_monitoring_config.monitoring_list,
-                          (unsigned)monitoring_allowlist_count());
+                          g_monitoring_config.monitorings, (unsigned)monitoring_allowlist_count());
     for (i = 0; (entry = monitoring_allowlist_at(i)) != authum_null; i++)
     {
         authum_command_printf(cmd, "  %u.%u.%u.%u/%u", (unsigned)(entry->net >> 24),

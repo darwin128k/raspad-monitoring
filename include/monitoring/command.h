@@ -8,7 +8,7 @@
 authum_bool_t
 monitoring_command_start(const authum_host_t *host);
 
-/* Load monitoring_list and log the result (start and `reload`). */
+/* Load monitorings.ini and log the result (start and `reload`). */
 int
 monitoring_command_load_list(void);
 

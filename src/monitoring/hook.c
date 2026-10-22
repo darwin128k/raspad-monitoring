@@ -237,7 +237,7 @@ monitoring_hook_answer(monitoring_query_t query, uint32_t ip)
             authum_logger_info(
                 &g_monitoring_logger, "%s from %u.%u.%u.%u not in %s — left to Steam",
                 monitoring_reply_query_name(query), g_net_from->ip[0], g_net_from->ip[1],
-                g_net_from->ip[2], g_net_from->ip[3], g_monitoring_config.monitoring_list);
+                g_net_from->ip[2], g_net_from->ip[3], g_monitoring_config.monitorings);
         }
         return 0;
     }

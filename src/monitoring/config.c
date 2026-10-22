@@ -10,7 +10,7 @@
 monitoring_config_t g_monitoring_config = {
     .info_answer = monitoring_info_answer_new,
     .info_answer_scope = monitoring_info_answer_scope_all,
-    .monitoring_list = "monitoring_list.ini",
+    .monitorings = "monitorings.ini",
     .legacy_info = authum_bool_true,
     .legacy_details = authum_bool_true,
     .legacy_players = authum_bool_true,
@@ -26,8 +26,8 @@ monitoring_config_t g_monitoring_config = {
 };
 
 static const authum_cfg_item_t g_monitoring_config_items[] = {
-    {"monitoring_list", authum_cfg_kind_cstr, g_monitoring_config.monitoring_list,
-     sizeof g_monitoring_config.monitoring_list},
+    {"monitorings", authum_cfg_kind_cstr, g_monitoring_config.monitorings,
+     sizeof g_monitoring_config.monitorings},
     {"legacy_info", authum_cfg_kind_bool, &g_monitoring_config.legacy_info, 0},
     {"legacy_details", authum_cfg_kind_bool, &g_monitoring_config.legacy_details, 0},
     {"legacy_players", authum_cfg_kind_bool, &g_monitoring_config.legacy_players, 0},
@@ -169,7 +169,7 @@ monitoring_config_load(void)
         "public_ip=%s appid=%d version=%s ratelimit_per_ip=%d debug=%d",
         monitoring_info_answer_name(g_monitoring_config.info_answer),
         monitoring_info_answer_scope_name(g_monitoring_config.info_answer_scope),
-        g_monitoring_config.monitoring_list, (int)g_monitoring_config.legacy_info,
+        g_monitoring_config.monitorings, (int)g_monitoring_config.legacy_info,
         (int)g_monitoring_config.legacy_details, (int)g_monitoring_config.legacy_players,
         (int)g_monitoring_config.legacy_rules,
         g_monitoring_config.public_ip[0] ? g_monitoring_config.public_ip : "(ip cvar)",
