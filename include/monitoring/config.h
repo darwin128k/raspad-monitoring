@@ -20,9 +20,24 @@ enum monitoring_info_answer
 };
 typedef enum monitoring_info_answer monitoring_info_answer_t;
 
+/*
+ * Who gets answers that skip the Steam challenge (A2S_INFO and the legacy
+ * text queries). Everyone else is left to Steam: 'A' challenge for A2S_INFO,
+ * no answer for info / details / players / rules.
+ */
+enum monitoring_info_answer_scope
+{
+    monitoring_info_answer_scope_all = 0,  /* any source, rate-limited per IP */
+    monitoring_info_answer_scope_list = 1, /* only sources in monitoring_list */
+};
+typedef enum monitoring_info_answer_scope monitoring_info_answer_scope_t;
+
 struct monitoring_config
 {
     monitoring_info_answer_t info_answer;
+    monitoring_info_answer_scope_t info_answer_scope;
+    /* Known monitoring pollers, leaf under the module dir (see allowlist.h). */
+    authum_char_t monitoring_list[64];
     /* Text queries Steam dropped, each on its own: rules is the big one
      * (several KB for a 10-byte query), so it ships off. */
     authum_bool_t legacy_info;
@@ -51,5 +66,8 @@ monitoring_config_load(void);
 
 const authum_char_t *
 monitoring_info_answer_name(monitoring_info_answer_t answer);
+
+const authum_char_t *
+monitoring_info_answer_scope_name(monitoring_info_answer_scope_t scope);
 
 #endif /* MONITORING_CONFIG_H */

@@ -26,6 +26,7 @@
 #include <monitoring/config.h>
 #include <monitoring/engine.h>
 #include <monitoring/host.h>
+#include <monitoring/allowlist.h>
 #include <monitoring/ratelimit.h>
 #include <monitoring/reply.h>
 
@@ -223,6 +224,21 @@ monitoring_hook_answer(monitoring_query_t query, uint32_t ip)
 {
     if (!monitoring_hook_enabled(query))
     {
+        return 0;
+    }
+
+    if (g_monitoring_config.info_answer_scope == monitoring_info_answer_scope_list &&
+        !monitoring_allowlist_contains(((uint32_t)g_net_from->ip[0] << 24) |
+                                       ((uint32_t)g_net_from->ip[1] << 16) |
+                                       ((uint32_t)g_net_from->ip[2] << 8) | g_net_from->ip[3]))
+    {
+        if (g_monitoring_config.debug)
+        {
+            authum_logger_info(
+                &g_monitoring_logger, "%s from %u.%u.%u.%u not in %s — left to Steam",
+                monitoring_reply_query_name(query), g_net_from->ip[0], g_net_from->ip[1],
+                g_net_from->ip[2], g_net_from->ip[3], g_monitoring_config.monitoring_list);
+        }
         return 0;
     }
 

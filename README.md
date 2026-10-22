@@ -62,12 +62,29 @@ address. Direct answers are rate-limited per source IP (`ratelimit_per_ip`);
 over the budget the query falls back to Steam's challenge. `rules` is off by
 default because its reply is several KB for a 10-byte query.
 
+### Answer only known monitorings
+
+`info_answer_scope = list` narrows the direct answers to the pollers listed in
+[`monitoring_list.ini`](monitoring_list.ini) (IP or CIDR per line). Everyone
+else gets Steam's challenge, so a spoofed query cannot be reflected through the
+server at all.
+
+The poller's IP is usually not the IP of the monitoring's website. Run a day
+with `info_answer_scope = all` and `debug = 1`: `authum.log` names every source
+that got a direct answer. Put those in the list, then:
+
+```
+authum monitoring reload   # re-read monitoring_list.ini, no restart
+authum monitoring list     # what is loaded
+```
+
 ## Install
 
 1. Download **`monitoring-linux32-authum.zip`** from [Releases](https://github.com/darwin128k/raspad-monitoring/releases) (or build below).
 2. Unpack into the game dir so you get:
    - `addons/authum/modules/monitoring/monitoring.so`
    - `addons/authum/modules/monitoring/monitoring.cfg`
+   - `addons/authum/modules/monitoring/monitoring_list.ini` (used with `info_answer_scope = list`)
 3. Add `monitoring` to `addons/authum/modules.list`.
 4. Restart HLDS. `authum.log` should say
    `hook installed on Steam_HandleIncomingPacket`.

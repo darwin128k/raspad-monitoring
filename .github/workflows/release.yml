@@ -48,12 +48,14 @@ jobs:
           cp build-linux32/modules/monitoring/monitoring.so \
             dist-ci/addons/authum/modules/monitoring/monitoring.so
           cp monitoring.cfg dist-ci/addons/authum/modules/monitoring/monitoring.cfg
+          cp monitoring_list.ini dist-ci/addons/authum/modules/monitoring/monitoring_list.ini
           printf 'monitoring\n' > dist-ci/addons/authum/modules.list.example
           cat > dist-ci/addons/authum/modules/monitoring/INSTALL.txt <<'EOF'
           Unpack into the game dir so paths match Authum:
 
             addons/authum/modules/monitoring/monitoring.so
             addons/authum/modules/monitoring/monitoring.cfg
+            addons/authum/modules/monitoring/monitoring_list.ini
 
           Ensure Authum is installed, then add a line to addons/authum/modules.list:
             monitoring
