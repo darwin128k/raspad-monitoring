@@ -1,0 +1,63 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Linux i386 Authum package
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install i386 toolchain
+        run: |
+          sudo dpkg --add-architecture i386
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            gcc-multilib ninja-build cmake zip \
+            libc6-dev:i386
+
+      - name: Configure & build
+        run: |
+          cmake -S . -B build-linux32 -G Ninja -DCMAKE_BUILD_TYPE=Release
+          cmake --build build-linux32 --target monitoring -j"$(nproc)"
+
+      - name: Pack Authum module layout
+        run: |
+          strip --strip-unneeded build-linux32/modules/monitoring/monitoring.so
+          rm -rf dist-ci && mkdir -p dist-ci/addons/authum/modules/monitoring
+          cp build-linux32/modules/monitoring/monitoring.so \
+            dist-ci/addons/authum/modules/monitoring/monitoring.so
+          cp monitoring.cfg dist-ci/addons/authum/modules/monitoring/monitoring.cfg
+          printf 'monitoring\n' > dist-ci/addons/authum/modules.list.example
+          cat > dist-ci/addons/authum/modules/monitoring/INSTALL.txt <<'EOF'
+          Unpack into the game dir so paths match Authum:
+
+            addons/authum/modules/monitoring/monitoring.so
+            addons/authum/modules/monitoring/monitoring.cfg
+
+          Ensure Authum is installed, then add a line to addons/authum/modules.list:
+            monitoring
+
+          Restart HLDS, then look for "hook installed on Steam_HandleIncomingPacket" in authum.log.
+          EOF
+          sed -i 's/^          //' dist-ci/addons/authum/modules/monitoring/INSTALL.txt
+          (cd dist-ci && zip -r ../monitoring-linux32-authum.zip addons)
+          ls -la monitoring-linux32-authum.zip
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: monitoring-linux32-authum
+          path: monitoring-linux32-authum.zip
+          if-no-files-found: error
