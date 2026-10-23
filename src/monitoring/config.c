@@ -117,7 +117,7 @@ monitoring_config_apply_file(const authum_char_t *leaf)
     authum_cfg_t cfg;
     authum_char_t answer[32];
 
-    /* configs/<leaf>; the old modules/monitoring/ copy still works. */
+    /* addons/authum/configs/<leaf> */
     if (!authum_host_config_path(&g_monitoring_host, leaf, &path) ||
         !authum_cfg_open(&cfg, &path))
     {
