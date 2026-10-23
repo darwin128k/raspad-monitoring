@@ -44,16 +44,15 @@ jobs:
       - name: Pack Authum module layout
         run: |
           strip --strip-unneeded build-linux32/modules/monitoring/monitoring.so
-          rm -rf dist-ci && mkdir -p dist-ci/addons/authum/modules/monitoring
-          cp build-linux32/modules/monitoring/monitoring.so \
-            dist-ci/addons/authum/modules/monitoring/monitoring.so
-          cp monitoring.cfg dist-ci/addons/authum/modules/monitoring/monitoring.cfg
+          rm -rf dist-ci
+          cmake --install build-linux32 --component monitoring --prefix dist-ci
           printf 'monitoring\n' > dist-ci/addons/authum/modules.list.example
           cat > dist-ci/addons/authum/modules/monitoring/INSTALL.txt <<'EOF'
           Unpack into the game dir so paths match Authum:
 
             addons/authum/modules/monitoring/monitoring.so
             addons/authum/modules/monitoring/monitoring.cfg
+            addons/authum/modules/monitoring/monitorings.ini
 
           Ensure Authum is installed, then add a line to addons/authum/modules.list:
             monitoring
