@@ -117,7 +117,7 @@ monitoring_config_apply_file(const authum_char_t *leaf)
     authum_cfg_t cfg;
     authum_char_t answer[32];
 
-    /* addons/authum/configs/<leaf> */
+    /* modules/monitoring/configs/<leaf> */
     if (!authum_host_config_path(&g_monitoring_host, leaf, &path) ||
         !authum_cfg_open(&cfg, &path))
     {
