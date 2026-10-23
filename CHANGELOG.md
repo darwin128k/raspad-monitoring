@@ -17,6 +17,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `monitoring.log_level`). `logging_mode` and `logging_split` are no longer read
   from `monitoring.cfg`.
 - The host is kept with `authum_host_copy`.
+- Follows Authum's layout: config in `addons/authum/configs/monitoring.cfg`, `monitorings.ini` in
+  `configs/monitoring/`;
+  an old copy in `modules/monitoring/` is still read, with a warning.
 
 ### Added
 

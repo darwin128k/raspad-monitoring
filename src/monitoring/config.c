@@ -117,7 +117,8 @@ monitoring_config_apply_file(const authum_char_t *leaf)
     authum_cfg_t cfg;
     authum_char_t answer[32];
 
-    if (!authum_path_join(&path, authum_host_env_module(&g_monitoring_host), leaf) ||
+    /* configs/<leaf>; the old modules/monitoring/ copy still works. */
+    if (!authum_host_config_path(&g_monitoring_host, leaf, &path) ||
         !authum_cfg_open(&cfg, &path))
     {
         return;
