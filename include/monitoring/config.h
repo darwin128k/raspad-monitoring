@@ -4,8 +4,6 @@
 #include <authum/bool.h>
 #include <authum/byte.h>
 #include <authum/char.h>
-#include <authum/logger/file/split.h>
-#include <authum/logger/sink.h>
 
 /*
  * What to send back for an A2S_INFO ("TSource Engine Query") that carries no
@@ -54,8 +52,6 @@ struct monitoring_config
     authum_i32_t ratelimit_per_ip;
     authum_bool_t debug;
 
-    authum_logger_sink_t logging_sinks;
-    authum_logger_file_split_t logging_split;
 };
 typedef struct monitoring_config monitoring_config_t;
 

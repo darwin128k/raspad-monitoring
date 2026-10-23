@@ -22,9 +22,8 @@ monitoring_authum_start(authum_host_t *host)
         return authum_bool_false;
     }
 
-    g_monitoring_host = *host;
-    authum_logger_init(&g_monitoring_logger, &g_monitoring_host, authum_logger_sink_host,
-                       "monitoring");
+    authum_host_copy(&g_monitoring_host, host);
+    authum_logger_init(&g_monitoring_logger, &g_monitoring_host);
 
     if (authum_null_eq(authum_host_env(&g_monitoring_host)))
     {
@@ -33,14 +32,6 @@ monitoring_authum_start(authum_host_t *host)
     }
 
     monitoring_config_load();
-    authum_logger_close(&g_monitoring_logger);
-    authum_logger_init(&g_monitoring_logger, &g_monitoring_host, g_monitoring_config.logging_sinks,
-                       "monitoring");
-    if ((g_monitoring_config.logging_sinks & authum_logger_sink_file) != 0u)
-    {
-        authum_logger_open_module_file(&g_monitoring_logger, g_monitoring_config.logging_split,
-                                       authum_null);
-    }
 
     authum_logger_info(&g_monitoring_logger, "start — module dir: %s",
                        authum_path_as_cstr(authum_host_env_module(&g_monitoring_host)));
