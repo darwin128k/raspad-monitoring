@@ -21,8 +21,6 @@ monitoring_config_t g_monitoring_config = {
     .ratelimit_per_ip = 5,
     .debug = authum_bool_false,
 
-    .logging_sinks = authum_logger_sink_host,
-    .logging_split = authum_logger_file_split_full,
 };
 
 static const authum_cfg_item_t g_monitoring_config_items[] = {
@@ -39,7 +37,6 @@ static const authum_cfg_item_t g_monitoring_config_items[] = {
      sizeof g_monitoring_config.version},
     {"ratelimit_per_ip", authum_cfg_kind_i32, &g_monitoring_config.ratelimit_per_ip, 0},
     {"debug", authum_cfg_kind_bool, &g_monitoring_config.debug, 0},
-    {"logging_mode", authum_cfg_kind_u32, &g_monitoring_config.logging_sinks, 0},
 };
 
 static const authum_char_t *const g_monitoring_info_answer_names[] = {
@@ -119,7 +116,6 @@ monitoring_config_apply_file(const authum_char_t *leaf)
     authum_path_t path;
     authum_cfg_t cfg;
     authum_char_t answer[32];
-    authum_char_t split[32];
 
     if (!authum_path_join(&path, authum_host_env_module(&g_monitoring_host), leaf) ||
         !authum_cfg_open(&cfg, &path))
@@ -139,11 +135,6 @@ monitoring_config_apply_file(const authum_char_t *leaf)
     if (authum_cfg_apply_cstr(&cfg, "info_answer_scope", answer, sizeof answer))
     {
         monitoring_config_parse_info_answer_scope(answer);
-    }
-
-    if (authum_cfg_apply_cstr(&cfg, "logging_split", split, sizeof split))
-    {
-        g_monitoring_config.logging_split = authum_logger_file_split_parse(split);
     }
 
     authum_cfg_close(&cfg);

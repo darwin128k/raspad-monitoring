@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.16)
 project(monitoring C)
 
-# Authum client module (ABI 0.3), pure C11 / Linux i386 (-m32).
+# Authum client module (ABI 1.0), pure C11 / Linux i386 (-m32).
 # Answers server-browser / monitoring queries the Steam GS layer would
 # otherwise gate behind an A2S challenge. No HLSDK / metamod-p.
 
