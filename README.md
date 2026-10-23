@@ -54,13 +54,34 @@ puts a detour on the first one:
 | anything else | Steam, unchanged | — |
 
 `C` and `m` carry the server address as their first field; HLDS bound to every
-interface writes `0.0.0.0` there, so monitoring puts `public_ip` (or the `ip`
-cvar) in instead.
+interface writes `0.0.0.0` there, so monitoring puts the real one in instead:
+`public_ip`, else the `ip` cvar, else the machine's one external IPv4 from its
+interfaces (behind NAT there is none — then set `public_ip`).
+
+The rest of `I` that the engine does not know is read where Steam reads it:
+`appid` from `steam_appid.txt`, `version` from `PatchVersion` in
+`<gamedir>/steam.inf` plus `/Stdio`. Values set in `monitoring.cfg` win.
 
 None of these answers needs a challenge, so each can be aimed at a spoofed
 address. Direct answers are rate-limited per source IP (`ratelimit_per_ip`);
 over the budget the query falls back to Steam's challenge. `rules` is off by
 default because its reply is several KB for a 10-byte query.
+
+### Answer only known monitorings
+
+`info_answer_scope = list` narrows the direct answers to the pollers listed in
+[`monitorings.ini`](monitorings.ini) (IP or CIDR per line). Everyone
+else gets Steam's challenge, so a spoofed query cannot be reflected through the
+server at all.
+
+The poller's IP is usually not the IP of the monitoring's website. Run a day
+with `info_answer_scope = all` and `debug = 1`: `authum.log` names every source
+that got a direct answer. Put those in the list, then:
+
+```
+authum monitoring reload   # re-read monitorings.ini, no restart
+authum monitoring list     # what is loaded
+```
 
 ## Install
 
@@ -68,6 +89,7 @@ default because its reply is several KB for a 10-byte query.
 2. Unpack into the game dir so you get:
    - `addons/authum/modules/monitoring/monitoring.so`
    - `addons/authum/modules/monitoring/monitoring.cfg`
+   - `addons/authum/modules/monitoring/monitorings.ini` (used with `info_answer_scope = list`)
 3. Add `monitoring` to `addons/authum/modules.list`.
 4. Restart HLDS. `authum.log` should say
    `hook installed on Steam_HandleIncomingPacket`.
@@ -95,6 +117,8 @@ git submodule update --init --recursive
 cmake -S . -B build-linux32 -G Ninja -DCMAKE_BUILD_TYPE=Release
 cmake --build build-linux32 --target monitoring
 # → build-linux32/modules/monitoring/monitoring.so
+cmake --install build-linux32 --component monitoring --prefix <gamedir>
+# → <gamedir>/addons/authum/modules/monitoring/{monitoring.so,monitoring.cfg,monitorings.ini}
 ```
 
 ```bash

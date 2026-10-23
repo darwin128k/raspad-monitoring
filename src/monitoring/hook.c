@@ -26,8 +26,10 @@
 #include <monitoring/config.h>
 #include <monitoring/engine.h>
 #include <monitoring/host.h>
+#include <monitoring/allowlist.h>
 #include <monitoring/ratelimit.h>
 #include <monitoring/reply.h>
+#include <monitoring/server.h>
 
 #include <authum/detour.h>
 #include <authum/logger.h>
@@ -117,7 +119,8 @@ monitoring_hook_server_port(void)
     return 0u;
 }
 
-/* "ip:port" for 'C' / 'm': public_ip, else the `ip` cvar; 0 = keep the engine's. */
+/* "ip:port" for 'C' / 'm': public_ip, else the `ip` cvar, else the machine's
+ * one external IPv4; 0 = keep the engine's. */
 static int
 monitoring_hook_public_address(char *buf, size_t buf_size)
 {
@@ -128,7 +131,11 @@ monitoring_hook_public_address(char *buf, size_t buf_size)
     {
         ip = g_cvar_variable_string("ip");
     }
-    if (!ip || !ip[0] || strcmp(ip, "localhost") == 0 || strcmp(ip, "0.0.0.0") == 0 || !port)
+    if (!ip || !ip[0] || strcmp(ip, "localhost") == 0 || strcmp(ip, "0.0.0.0") == 0)
+    {
+        ip = monitoring_server_detected_ip();
+    }
+    if (!ip[0] || !port)
     {
         return 0;
     }
@@ -223,6 +230,21 @@ monitoring_hook_answer(monitoring_query_t query, uint32_t ip)
 {
     if (!monitoring_hook_enabled(query))
     {
+        return 0;
+    }
+
+    if (g_monitoring_config.info_answer_scope == monitoring_info_answer_scope_list &&
+        !monitoring_allowlist_contains(((uint32_t)g_net_from->ip[0] << 24) |
+                                       ((uint32_t)g_net_from->ip[1] << 16) |
+                                       ((uint32_t)g_net_from->ip[2] << 8) | g_net_from->ip[3]))
+    {
+        if (g_monitoring_config.debug)
+        {
+            authum_logger_info(
+                &g_monitoring_logger, "%s from %u.%u.%u.%u not in %s — left to Steam",
+                monitoring_reply_query_name(query), g_net_from->ip[0], g_net_from->ip[1],
+                g_net_from->ip[2], g_net_from->ip[3], g_monitoring_config.monitorings);
+        }
         return 0;
     }
 
