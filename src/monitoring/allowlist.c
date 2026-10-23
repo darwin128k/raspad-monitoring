@@ -106,8 +106,8 @@ monitoring_allowlist_load(const authum_char_t *leaf)
     monitoring_allowlist_entry_t entry;
 
     g_count = 0;
-    /* configs/monitoring/monitorings.ini (or configs/, or the old module folder). */
-    if (!authum_host_config_path(&g_monitoring_host, leaf, &path))
+    /* addons/authum/configs/monitoring/monitorings.ini */
+    if (!authum_host_module_config_path(&g_monitoring_host, leaf, &path))
     {
         return -1;
     }
