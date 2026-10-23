@@ -33,8 +33,8 @@ monitoring_authum_start(authum_host_t *host)
 
     monitoring_config_load();
 
-    authum_logger_info(&g_monitoring_logger, "start — module dir: %s",
-                       authum_path_as_cstr(authum_host_env_module(&g_monitoring_host)));
+    authum_logger_info(&g_monitoring_logger, "start — data dir: %s",
+                       authum_path_as_cstr(authum_host_env_module_data(&g_monitoring_host)));
 
     monitoring_server_resolve();
     monitoring_command_load_list();
