@@ -1,46 +1,47 @@
 #include <monitoring/reply.h>
 
-#include <string.h>
-#include <strings.h>
+#include <authum/cstr.h>
+#include <authum/memory.h>
 
-static const char g_a2s_info_payload[] = "TSource Engine Query";
+static const authum_char_t g_a2s_info_payload[] = "TSource Engine Query";
 
 typedef struct monitoring_reader
 {
-    const uint8_t *p;
-    const uint8_t *end;
+    const authum_u8_t *p;
+    const authum_u8_t *end;
     int ok;
 } monitoring_reader_t;
 
 typedef struct monitoring_writer
 {
-    uint8_t *p;
-    uint8_t *end;
+    authum_u8_t *p;
+    authum_u8_t *end;
     int ok;
 } monitoring_writer_t;
 
-static const char *
+static const authum_char_t *
 reader_string(monitoring_reader_t *r)
 {
-    const uint8_t *nul;
-    const char *s;
+    const authum_u8_t *nul;
+    const authum_char_t *s;
+    authum_u8_t zero = 0;
 
     if (!r->ok)
     {
         return "";
     }
-    nul = memchr(r->p, 0, (size_t)(r->end - r->p));
+    nul = authum_memory_find(r->p, (authum_usize_t)(r->end - r->p), &zero, 1);
     if (!nul)
     {
         r->ok = 0;
         return "";
     }
-    s = (const char *)r->p;
+    s = (const authum_char_t *)r->p;
     r->p = nul + 1;
     return s;
 }
 
-static uint8_t
+static authum_u8_t
 reader_u8(monitoring_reader_t *r)
 {
     if (!r->ok || r->p >= r->end)
@@ -52,9 +53,9 @@ reader_u8(monitoring_reader_t *r)
 }
 
 static void
-reader_skip(monitoring_reader_t *r, size_t n)
+reader_skip(monitoring_reader_t *r, authum_usize_t n)
 {
-    if (!r->ok || (size_t)(r->end - r->p) < n)
+    if (!r->ok || (authum_usize_t)(r->end - r->p) < n)
     {
         r->ok = 0;
         return;
@@ -63,55 +64,88 @@ reader_skip(monitoring_reader_t *r, size_t n)
 }
 
 static void
-writer_bytes(monitoring_writer_t *w, const void *data, size_t n)
+writer_bytes(monitoring_writer_t *w, const void *data, authum_usize_t n)
 {
-    if (!w->ok || (size_t)(w->end - w->p) < n)
+    if (!w->ok || (authum_usize_t)(w->end - w->p) < n)
     {
         w->ok = 0;
         return;
     }
-    memcpy(w->p, data, n);
+    authum_memory_copy(w->p, data, n);
     w->p += n;
 }
 
 static void
-writer_u8(monitoring_writer_t *w, uint8_t v)
+writer_u8(monitoring_writer_t *w, authum_u8_t v)
 {
     writer_bytes(w, &v, 1);
 }
 
 static void
-writer_u16(monitoring_writer_t *w, uint16_t v)
+writer_u16(monitoring_writer_t *w, unsigned short v)
 {
-    uint8_t b[2] = {(uint8_t)(v & 0xff), (uint8_t)(v >> 8)};
+    authum_u8_t b[2] = {(authum_u8_t)(v & 0xff), (authum_u8_t)(v >> 8)};
+
     writer_bytes(w, b, sizeof b);
 }
 
 static void
-writer_u64(monitoring_writer_t *w, uint64_t v)
+writer_u64(monitoring_writer_t *w, authum_u64_t v)
 {
-    uint8_t b[8];
-    int i;
+    authum_u8_t b[8];
 
-    for (i = 0; i < 8; i++)
+    for (int i = 0; i < 8; i++)
     {
-        b[i] = (uint8_t)(v >> (8 * i));
+        b[i] = (authum_u8_t)(v >> (8 * i));
     }
     writer_bytes(w, b, sizeof b);
 }
 
 static void
-writer_string(monitoring_writer_t *w, const char *s)
+writer_string(monitoring_writer_t *w, const authum_char_t *s)
 {
-    writer_bytes(w, s, strlen(s) + 1);
+    writer_bytes(w, s, authum_cstr_len(s) + 1);
+}
+
+/* The length of the token at the start of @p p, up to a space, LF or NUL. */
+static authum_usize_t
+monitoring_reply_token_length(const authum_u8_t *p, authum_usize_t size)
+{
+    authum_usize_t tok = 0;
+
+    while (tok < size && p[tok] != ' ' && p[tok] != '\n' && p[tok] != '\0')
+    {
+        tok++;
+    }
+    return tok;
 }
 
 monitoring_query_t
-monitoring_reply_classify(const uint8_t *data, size_t len)
+monitoring_reply_classify(const authum_u8_t *data, authum_usize_t len)
 {
+    if (len < 5 || !authum_memory_is_equal(data, "\xff\xff\xff\xff", 4))
+    {
+        return monitoring_query_other;
+    }
+
+    const authum_u8_t *p = data + 4;
+    const authum_usize_t n = len - 4;
+    const authum_usize_t a2s_len = sizeof g_a2s_info_payload - 1;
+
+    if (n >= a2s_len && authum_memory_is_equal(p, g_a2s_info_payload, a2s_len))
+    {
+        /* "TSource Engine Query\0" then an optional 4-byte challenge;
+         * -1 is the "give me a challenge" placeholder, same as none. */
+        if (n >= a2s_len + 1 + 4 && !authum_memory_is_equal(p + a2s_len + 1, "\xff\xff\xff\xff", 4))
+        {
+            return monitoring_query_a2s_info_challenged;
+        }
+        return monitoring_query_a2s_info;
+    }
+
     static const struct
     {
-        const char *token;
+        const authum_char_t *token;
         monitoring_query_t query;
     } legacy[] = {
         {"info", monitoring_query_legacy_info},
@@ -119,37 +153,14 @@ monitoring_reply_classify(const uint8_t *data, size_t len)
         {"players", monitoring_query_legacy_players},
         {"rules", monitoring_query_legacy_rules},
     };
-    const size_t a2s_len = sizeof g_a2s_info_payload - 1;
-    const uint8_t *p;
-    size_t n;
-    size_t tok;
-    size_t i;
 
-    if (len < 5 || memcmp(data, "\xff\xff\xff\xff", 4) != 0)
-    {
-        return monitoring_query_other;
-    }
-    p = data + 4;
-    n = len - 4;
+    const authum_usize_t tok = monitoring_reply_token_length(p, n);
 
-    if (n >= a2s_len && memcmp(p, g_a2s_info_payload, a2s_len) == 0)
+    for (authum_usize_t i = 0; i < sizeof legacy / sizeof legacy[0]; i++)
     {
-        /* "TSource Engine Query\0" then an optional 4-byte challenge;
-         * -1 is the "give me a challenge" placeholder, same as none. */
-        if (n >= a2s_len + 1 + 4 && memcmp(p + a2s_len + 1, "\xff\xff\xff\xff", 4) != 0)
-        {
-            return monitoring_query_a2s_info_challenged;
-        }
-        return monitoring_query_a2s_info;
-    }
-
-    for (tok = 0; tok < n && p[tok] != ' ' && p[tok] != '\n' && p[tok] != '\0'; tok++)
-    {
-    }
-    for (i = 0; i < sizeof legacy / sizeof legacy[0]; i++)
-    {
-        if (strlen(legacy[i].token) == tok &&
-            strncasecmp((const char *)p, legacy[i].token, tok) == 0)
+        if (authum_cstr_len(legacy[i].token) == tok &&
+            authum_cstr_is_equal_n((const authum_char_t *)p, legacy[i].token, tok,
+                                   authum_bool_true))
         {
             return legacy[i].query;
         }
@@ -157,7 +168,7 @@ monitoring_reply_classify(const uint8_t *data, size_t len)
     return monitoring_query_other;
 }
 
-const char *
+const authum_char_t *
 monitoring_reply_query_name(monitoring_query_t query)
 {
     switch (query)
@@ -179,75 +190,70 @@ monitoring_reply_query_name(monitoring_query_t query)
     }
 }
 
-size_t
-monitoring_reply_set_address(const uint8_t *in, size_t in_len, const char *address, uint8_t *out,
-                             size_t out_size)
+authum_usize_t
+monitoring_reply_set_address(const authum_u8_t *in, authum_usize_t in_len,
+                             const authum_char_t *address, authum_u8_t *out,
+                             authum_usize_t out_size)
 {
-    monitoring_reader_t r;
-    monitoring_writer_t w;
-
-    if (in_len < 5 || memcmp(in, "\xff\xff\xff\xff", 4) != 0 || (in[4] != 'C' && in[4] != 'm'))
+    if (in_len < 5 || !authum_memory_is_equal(in, "\xff\xff\xff\xff", 4) ||
+        (in[4] != 'C' && in[4] != 'm'))
     {
         return 0;
     }
-    r.p = in + 5;
-    r.end = in + in_len;
-    r.ok = 1;
+
+    monitoring_reader_t r = {
+        .p = in + 5,
+        .end = in + in_len,
+        .ok = 1,
+    };
+
     (void)reader_string(&r);
     if (!r.ok)
     {
         return 0;
     }
 
-    w.p = out;
-    w.end = out + out_size;
-    w.ok = 1;
+    monitoring_writer_t w = {
+        .p = out,
+        .end = out + out_size,
+        .ok = 1,
+    };
+
     writer_bytes(&w, in, 5);
     writer_string(&w, address);
-    writer_bytes(&w, r.p, (size_t)(r.end - r.p));
-    return w.ok ? (size_t)(w.p - out) : 0;
+    writer_bytes(&w, r.p, (authum_usize_t)(r.end - r.p));
+    return w.ok ? (authum_usize_t)(w.p - out) : 0;
 }
 
-size_t
-monitoring_reply_m_to_i(const uint8_t *m, size_t m_len, uint16_t appid, const char *version,
-                        uint16_t game_port, uint8_t *out, size_t out_size)
+authum_usize_t
+monitoring_reply_m_to_i(const authum_u8_t *m, authum_usize_t m_len, unsigned short appid,
+                        const authum_char_t *version, unsigned short game_port, authum_u8_t *out,
+                        authum_usize_t out_size)
 {
-    monitoring_reader_t r;
-    monitoring_writer_t w;
-    const char *name;
-    const char *map;
-    const char *folder;
-    const char *game;
-    uint8_t players;
-    uint8_t max_players;
-    uint8_t protocol;
-    uint8_t type;
-    uint8_t os;
-    uint8_t password;
-    uint8_t secure;
-    uint8_t bots;
-    uint8_t edf;
-
-    if (m_len < 5 || memcmp(m, "\xff\xff\xff\xff", 4) != 0 || m[4] != 'm')
+    if (m_len < 5 || !authum_memory_is_equal(m, "\xff\xff\xff\xff", 4) || m[4] != 'm')
     {
         return 0;
     }
 
     /* S2A_INFO_DETAILED, as SVC_Info(1) writes it in build 10211. */
-    r.p = m + 5;
-    r.end = m + m_len;
-    r.ok = 1;
+    monitoring_reader_t r = {
+        .p = m + 5,
+        .end = m + m_len,
+        .ok = 1,
+    };
+
     (void)reader_string(&r); /* net_local_adr */
-    name = reader_string(&r);
-    map = reader_string(&r);
-    folder = reader_string(&r);
-    game = reader_string(&r);
-    players = reader_u8(&r);
-    max_players = reader_u8(&r);
-    protocol = reader_u8(&r);
-    type = reader_u8(&r);
-    os = reader_u8(&r);
-    password = reader_u8(&r);
+    const authum_char_t *name = reader_string(&r);
+    const authum_char_t *map = reader_string(&r);
+    const authum_char_t *folder = reader_string(&r);
+    const authum_char_t *game = reader_string(&r);
+    const authum_u8_t players = reader_u8(&r);
+    const authum_u8_t max_players = reader_u8(&r);
+    const authum_u8_t protocol = reader_u8(&r);
+    const authum_u8_t type = reader_u8(&r);
+    const authum_u8_t os = reader_u8(&r);
+    const authum_u8_t password = reader_u8(&r);
+
     if (reader_u8(&r))
     {
         /* gmodinfo: url_info, url_dl, "", version, size, svonly, cldll */
@@ -256,16 +262,21 @@ monitoring_reply_m_to_i(const uint8_t *m, size_t m_len, uint16_t appid, const ch
         (void)reader_string(&r);
         reader_skip(&r, 4 + 4 + 1 + 1);
     }
-    secure = reader_u8(&r);
-    bots = reader_u8(&r);
+
+    const authum_u8_t secure = reader_u8(&r);
+    const authum_u8_t bots = reader_u8(&r);
+
     if (!r.ok)
     {
         return 0;
     }
 
-    w.p = out;
-    w.end = out + out_size;
-    w.ok = 1;
+    monitoring_writer_t w = {
+        .p = out,
+        .end = out + out_size,
+        .ok = 1,
+    };
+
     writer_bytes(&w,
                  "\xff\xff\xff\xff"
                  "I",
@@ -286,7 +297,8 @@ monitoring_reply_m_to_i(const uint8_t *m, size_t m_len, uint16_t appid, const ch
     writer_string(&w, version);
 
     /* EDF: 0x80 game port, 0x01 game id (= appid for GoldSrc mods on Steam). */
-    edf = 0x01;
+    authum_u8_t edf = 0x01;
+
     if (game_port)
     {
         edf |= 0x80;
@@ -296,7 +308,7 @@ monitoring_reply_m_to_i(const uint8_t *m, size_t m_len, uint16_t appid, const ch
     {
         writer_u16(&w, game_port);
     }
-    writer_u64(&w, (uint64_t)appid);
+    writer_u64(&w, (authum_u64_t)appid);
 
-    return w.ok ? (size_t)(w.p - out) : 0;
+    return w.ok ? (authum_usize_t)(w.p - out) : 0;
 }

@@ -114,31 +114,37 @@ static void
 monitoring_config_apply_file(const authum_char_t *leaf)
 {
     authum_path_t path;
-    authum_cfg_t cfg;
-    authum_char_t answer[32];
 
     /* modules/monitoring/configs/<leaf> */
-    if (!authum_host_join_config_path(&g_monitoring_host, leaf, &path) ||
-        !authum_cfg_open(&cfg, &path))
+    if (!authum_host_join_config_path(&g_monitoring_host, leaf, &path))
     {
         return;
     }
-
-    authum_cfg_apply_items(
-        &cfg, g_monitoring_config_items,
-        (authum_usize_t)(sizeof g_monitoring_config_items / sizeof g_monitoring_config_items[0]));
-
-    if (authum_cfg_apply_cstr(&cfg, "info_answer", answer, sizeof answer))
     {
-        monitoring_config_parse_info_answer(answer);
-    }
+        authum_cfg_t cfg;
+        authum_char_t answer[32];
 
-    if (authum_cfg_apply_cstr(&cfg, "info_answer_scope", answer, sizeof answer))
-    {
-        monitoring_config_parse_info_answer_scope(answer);
-    }
+        if (!authum_cfg_open(&cfg, &path))
+        {
+            return;
+        }
 
-    authum_cfg_close(&cfg);
+        authum_cfg_apply_items(&cfg, g_monitoring_config_items,
+                               (authum_usize_t)(sizeof g_monitoring_config_items /
+                                                sizeof g_monitoring_config_items[0]));
+
+        if (authum_cfg_apply_cstr(&cfg, "info_answer", answer, sizeof answer))
+        {
+            monitoring_config_parse_info_answer(answer);
+        }
+
+        if (authum_cfg_apply_cstr(&cfg, "info_answer_scope", answer, sizeof answer))
+        {
+            monitoring_config_parse_info_answer_scope(answer);
+        }
+
+        authum_cfg_close(&cfg);
+    }
     authum_logger_info(&g_monitoring_logger, "applied %s", leaf);
 }
 

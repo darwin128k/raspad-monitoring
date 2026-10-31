@@ -2,8 +2,7 @@
 #define MONITORING_RATELIMIT_H
 
 #include <authum/bool.h>
-
-#include <stdint.h>
+#include <authum/byte.h>
 
 /*
  * Per-source-IP budget for answers we send ourselves (they bypass the Steam
@@ -11,6 +10,6 @@
  * windows; a colliding IP just takes over the slot.
  */
 authum_bool_t
-monitoring_ratelimit_allow(uint32_t ip, int32_t per_second);
+monitoring_ratelimit_allow(authum_u32_t ip, authum_i32_t per_second);
 
 #endif /* MONITORING_RATELIMIT_H */

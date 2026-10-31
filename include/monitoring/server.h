@@ -3,10 +3,9 @@
 
 #include <authum/bool.h>
 #include <authum/byte.h>
+#include <authum/char.h>
 #include <authum/path.h>
-
-#include <stddef.h>
-#include <stdint.h>
+#include <authum/size.h>
 
 /*
  * What the 'I' / 'C' / 'm' replies need that the engine does not hand over,
@@ -25,7 +24,7 @@ void
 monitoring_server_resolve(void);
 
 /* Detected public IPv4 ("" when none or ambiguous). */
-const char *
+const authum_char_t *
 monitoring_server_detected_ip(void);
 
 /* steam_appid.txt → appid, 0 when missing or not a number in 1..65535. */
@@ -34,6 +33,7 @@ monitoring_server_read_appid(const authum_path_t *path);
 
 /* steam.inf → "<PatchVersion>/Stdio" into @p out. False when missing. */
 authum_bool_t
-monitoring_server_read_version(const authum_path_t *path, char *out, size_t out_size);
+monitoring_server_read_version(const authum_path_t *path, authum_char_t *out,
+                               authum_usize_t out_size);
 
 #endif /* MONITORING_SERVER_H */
