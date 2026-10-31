@@ -95,9 +95,7 @@ monitoring_config_parse_info_answer_scope(const authum_char_t *value)
 static void
 monitoring_config_parse_info_answer(const authum_char_t *value)
 {
-    unsigned i;
-
-    for (i = 0;
+    for (authum_usize_t i = 0;
          i < sizeof g_monitoring_info_answer_names / sizeof g_monitoring_info_answer_names[0]; i++)
     {
         if (authum_cstr_is_equal(value, g_monitoring_info_answer_names[i], authum_bool_true))

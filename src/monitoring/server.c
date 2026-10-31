@@ -79,9 +79,8 @@ monitoring_server_value_len(const authum_char_t *value)
 {
     static const authum_char_t stops[] = " \t\r\n";
     authum_usize_t len = authum_cstr_len(value);
-    authum_usize_t i;
 
-    for (i = 0; i < sizeof stops - 1; i++)
+    for (authum_usize_t i = 0; i < sizeof stops - 1; i++)
     {
         const authum_char_t *at = authum_cstr_find_char(value, stops[i]);
 
