@@ -66,7 +66,8 @@ monitoring_hook_resolve(const char *name)
 {
     authum_ptr address = authum_symbol_find_engine(name, authum_null);
 
-    authum_logger_info(&g_monitoring_logger, "engine resolve: %s @ %p", name, address);
+    authum_logger_info(&g_monitoring_logger, "engine resolve: %s @ %x", name,
+                       (unsigned)(uintptr_t)address);
     return address;
 }
 
@@ -359,8 +360,8 @@ monitoring_hook_install(void)
         authum_logger_error(&g_monitoring_logger, "detour on Steam_HandleIncomingPacket FAILED");
         return 0;
     }
-    authum_logger_info(&g_monitoring_logger, "hook installed on Steam_HandleIncomingPacket @ %p",
-                       (void *)g_steam_handle_incoming_packet);
+    authum_logger_info(&g_monitoring_logger, "hook installed on Steam_HandleIncomingPacket @ %x",
+                       (unsigned)(uintptr_t)g_steam_handle_incoming_packet);
     if (monitoring_hook_public_address(address, sizeof address))
     {
         authum_logger_info(&g_monitoring_logger, "'C' / 'm' address: %s", address);

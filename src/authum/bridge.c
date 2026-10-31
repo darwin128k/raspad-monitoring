@@ -25,7 +25,7 @@ monitoring_authum_start(authum_host_t *host)
     authum_host_copy(&g_monitoring_host, host);
     authum_logger_init(&g_monitoring_logger, &g_monitoring_host);
 
-    if (authum_null_eq(authum_host_env(&g_monitoring_host)))
+    if (authum_null_eq(authum_host_get_env(&g_monitoring_host)))
     {
         authum_logger_error(&g_monitoring_logger, "host facade incomplete (needs env)");
         return authum_bool_false;
@@ -34,7 +34,7 @@ monitoring_authum_start(authum_host_t *host)
     monitoring_config_load();
 
     authum_logger_info(&g_monitoring_logger, "start — data dir: %s",
-                       authum_path_as_cstr(authum_host_env_module_data(&g_monitoring_host)));
+                       authum_path_get_cstr(authum_host_get_module_data_path(&g_monitoring_host)));
 
     monitoring_server_resolve();
     monitoring_command_load_list();
@@ -46,7 +46,7 @@ monitoring_authum_start(authum_host_t *host)
     }
 
     /* Without the commands facade the module still works; only reload / list are gone. */
-    if (authum_null_eq(authum_host_commands(&g_monitoring_host)) ||
+    if (authum_null_eq(authum_host_get_commands(&g_monitoring_host)) ||
         !monitoring_command_start(&g_monitoring_host))
     {
         authum_logger_warning(&g_monitoring_logger,

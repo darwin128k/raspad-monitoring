@@ -76,11 +76,11 @@ monitoring_info_answer_scope_name(monitoring_info_answer_scope_t scope)
 static void
 monitoring_config_parse_info_answer_scope(const authum_char_t *value)
 {
-    if (authum_cstr_eq(value, "all", authum_bool_true))
+    if (authum_cstr_is_equal(value, "all", authum_bool_true))
     {
         g_monitoring_config.info_answer_scope = monitoring_info_answer_scope_all;
     }
-    else if (authum_cstr_eq(value, "list", authum_bool_true))
+    else if (authum_cstr_is_equal(value, "list", authum_bool_true))
     {
         g_monitoring_config.info_answer_scope = monitoring_info_answer_scope_list;
     }
@@ -100,7 +100,7 @@ monitoring_config_parse_info_answer(const authum_char_t *value)
     for (i = 0;
          i < sizeof g_monitoring_info_answer_names / sizeof g_monitoring_info_answer_names[0]; i++)
     {
-        if (authum_cstr_eq(value, g_monitoring_info_answer_names[i], authum_bool_true))
+        if (authum_cstr_is_equal(value, g_monitoring_info_answer_names[i], authum_bool_true))
         {
             g_monitoring_config.info_answer = (monitoring_info_answer_t)i;
             return;
@@ -118,7 +118,7 @@ monitoring_config_apply_file(const authum_char_t *leaf)
     authum_char_t answer[32];
 
     /* modules/monitoring/configs/<leaf> */
-    if (!authum_host_config_path(&g_monitoring_host, leaf, &path) ||
+    if (!authum_host_join_config_path(&g_monitoring_host, leaf, &path) ||
         !authum_cfg_open(&cfg, &path))
     {
         return;

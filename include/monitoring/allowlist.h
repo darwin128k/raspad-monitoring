@@ -15,6 +15,10 @@
  */
 #define MONITORING_ALLOWLIST_MAX 256
 
+/* How much text the allow list file may hold; it is read whole and split
+ * into lines here (the file API reads bytes, not lines). */
+#define MONITORING_ALLOWLIST_TEXT_MAX 16384
+
 typedef struct monitoring_allowlist_entry
 {
     uint32_t net;  /* host byte order, already masked */

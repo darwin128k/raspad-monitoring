@@ -9,8 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Built on Authum 3.0.0 (module ABI 1.0.0); `lib/authum` tracks branch
-  `3.0.0`. Needs `authum_mm` 3.0.0 — older hosts refuse the module.
+- Built on Authum 4.0.0 (module ABI 3.0.0); `lib/authum` tracks branch
+  `4.0.0`. Needs a host with module ABI 3.0 — older hosts refuse the module.
+- Files are read through the Authum facade (`<authum/file.h>`): the allow list,
+  `steam_appid.txt` and `steam.inf` are no longer opened with `fopen`.
 - Logging is Authum's: lines go to `addons/authum/logs/monitoring/YYYY-MM-DD.log`,
   warnings and errors also to `logs/authum/`, levels in
   `addons/authum/authum.cfg` (`log_level`, `log_console`,

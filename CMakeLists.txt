@@ -75,7 +75,11 @@ if (NOT MSVC)
 	)
 endif ()
 
-target_link_libraries(monitoring PRIVATE authum_client pthread dl m)
+target_link_libraries(monitoring PRIVATE authum_client pthread)
+if (NOT WIN32)
+	# POSIX-only system libraries; MSYS2 MinGW has no libdl.a.
+	target_link_libraries(monitoring PRIVATE dl m)
+endif ()
 
 if (CMAKE_BUILD_TYPE STREQUAL "Release" OR CMAKE_BUILD_TYPE STREQUAL "MinSizeRel")
 	if (CMAKE_STRIP)
