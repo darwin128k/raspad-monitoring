@@ -3,6 +3,7 @@
 #include <monitoring/config.h>
 #include <monitoring/host.h>
 
+#include <authum/file.h>
 #include <authum/host.h>
 #include <authum/logger.h>
 #include <authum/net.h>
@@ -20,29 +21,41 @@ static const char g_fallback_version[] = "1.1.2.7/Stdio";
 static char g_detected_ip[AUTHUM_NET_IPV4_TEXT_SIZE];
 
 authum_i32_t
-monitoring_server_read_appid(const char *path)
+monitoring_server_read_appid(const authum_path_t *path)
 {
-    FILE *fp = fopen(path, "r");
-    char line[32];
+    authum_file_t file;
+    authum_char_t text[64];
+    authum_usize_t size = 0;
+    char *newline;
     char *end;
     long value;
 
-    if (!fp)
+    authum_file_init(&file);
+    if (!authum_file_open(&file, path, authum_file_mode_read))
     {
         return 0;
     }
-    if (!fgets(line, (int)sizeof line, fp))
+    if (!authum_file_read_all(&file, text, sizeof text, &size) || size == 0 ||
+        size >= sizeof text)
     {
-        fclose(fp);
+        authum_file_close(&file);
         return 0;
     }
-    fclose(fp);
-    value = strtol(line, &end, 10);
+    authum_file_close(&file);
+    text[size] = '\0';
+
+    /* Only the first line carries the appid. */
+    newline = (char *)memchr(text, '\n', (size_t)size);
+    if (newline)
+    {
+        *newline = '\0';
+    }
+    value = strtol(text, &end, 10);
     while (*end == ' ' || *end == '\t' || *end == '\r' || *end == '\n')
     {
         end++;
     }
-    if (end == line || *end != '\0' || value < 1 || value > 0xffff)
+    if (end == text || *end != '\0' || value < 1 || value > 0xffff)
     {
         return 0;
     }
@@ -50,36 +63,61 @@ monitoring_server_read_appid(const char *path)
 }
 
 authum_bool_t
-monitoring_server_read_version(const char *path, char *out, size_t out_size)
+monitoring_server_read_version(const authum_path_t *path, char *out, size_t out_size)
 {
     static const char key[] = "PatchVersion=";
-    FILE *fp = fopen(path, "r");
-    char line[128];
+    authum_file_t file;
+    static authum_char_t text[8192];
+    authum_usize_t size = 0;
     authum_bool_t found = authum_bool_false;
+    char *line;
+    char *end;
 
-    if (!fp)
+    authum_file_init(&file);
+    if (!authum_file_open(&file, path, authum_file_mode_read))
     {
         return authum_bool_false;
     }
-    while (!found && fgets(line, (int)sizeof line, fp))
+    if (!authum_file_read_all(&file, text, sizeof text, &size) || size >= sizeof text)
     {
+        authum_file_close(&file);
+        authum_logger_warning(&g_monitoring_logger, "steam.inf: over %d bytes — not read",
+                              (int)sizeof text);
+        return authum_bool_false;
+    }
+    authum_file_close(&file);
+    text[size] = '\0';
+
+    /* steam.inf is a flat list of "Key=Value" lines; the file API reads
+     * bytes, so the lines are split here. */
+    line = text;
+    end = text + size;
+    while (line < end && !found)
+    {
+        char *newline = strchr(line, '\n');
         char *value;
         size_t len;
 
+        if (newline)
+        {
+            *newline = '\0';
+        }
         if (strncasecmp(line, key, sizeof key - 1) != 0)
         {
+            line = newline ? newline + 1 : end;
             continue;
         }
         value = line + sizeof key - 1;
         len = strcspn(value, " \t\r\n");
         if (len == 0)
         {
+            line = newline ? newline + 1 : end;
             continue;
         }
         value[len] = '\0';
         found = snprintf(out, out_size, "%s/Stdio", value) < (int)out_size;
+        line = newline ? newline + 1 : end;
     }
-    fclose(fp);
     return found;
 }
 
@@ -95,7 +133,7 @@ monitoring_server_detect_ip(void)
 {
     authum_u32_t ips[8];
     authum_char_t text[AUTHUM_NET_IPV4_TEXT_SIZE];
-    authum_usize_t internal = authum_net_ipv4_internal(ips, 8u);
+    authum_usize_t internal = authum_net_ipv4_collect_internal(ips, 8u);
     authum_usize_t external;
     authum_usize_t i;
 
@@ -104,7 +142,7 @@ monitoring_server_detect_ip(void)
         authum_net_ipv4_format(ips[i], text, sizeof text);
         authum_logger_info(&g_monitoring_logger, "internal IPv4 %s", text);
     }
-    external = authum_net_ipv4_external(ips, 8u);
+    external = authum_net_ipv4_collect_external(ips, 8u);
     for (i = 0u; i < external && i < 8u; i++)
     {
         authum_net_ipv4_format(ips[i], text, sizeof text);
@@ -127,7 +165,7 @@ monitoring_server_detect_ip(void)
 void
 monitoring_server_resolve(void)
 {
-    const authum_path_t *game = authum_host_env_game(&g_monitoring_host);
+    const authum_path_t *game = authum_host_get_game_path(&g_monitoring_host);
     authum_path_t root;
     authum_path_t file;
 
@@ -136,13 +174,12 @@ monitoring_server_resolve(void)
         authum_logger_info(&g_monitoring_logger, "appid %d (monitoring.cfg)",
                            (int)g_monitoring_config.appid);
     }
-    else if (game && authum_path_parent(&root, game) &&
+    else if (game && authum_path_assign_parent(&root, game) &&
              authum_path_join(&file, &root, "steam_appid.txt") &&
-             (g_monitoring_config.appid =
-                  monitoring_server_read_appid(authum_path_as_cstr(&file))) > 0)
+             (g_monitoring_config.appid = monitoring_server_read_appid(&file)) > 0)
     {
         authum_logger_info(&g_monitoring_logger, "appid %d (%s)", (int)g_monitoring_config.appid,
-                           authum_path_as_cstr(&file));
+                           authum_path_get_cstr(&file));
     }
     else
     {
@@ -158,11 +195,11 @@ monitoring_server_resolve(void)
                            g_monitoring_config.version);
     }
     else if (game && authum_path_join(&file, game, "steam.inf") &&
-             monitoring_server_read_version(authum_path_as_cstr(&file), g_monitoring_config.version,
+             monitoring_server_read_version(&file, g_monitoring_config.version,
                                             sizeof g_monitoring_config.version))
     {
         authum_logger_info(&g_monitoring_logger, "version %s (%s)", g_monitoring_config.version,
-                           authum_path_as_cstr(&file));
+                           authum_path_get_cstr(&file));
     }
     else
     {

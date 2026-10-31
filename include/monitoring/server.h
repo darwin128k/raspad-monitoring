@@ -3,6 +3,7 @@
 
 #include <authum/bool.h>
 #include <authum/byte.h>
+#include <authum/path.h>
 
 #include <stddef.h>
 #include <stdint.h>
@@ -29,10 +30,10 @@ monitoring_server_detected_ip(void);
 
 /* steam_appid.txt → appid, 0 when missing or not a number in 1..65535. */
 authum_i32_t
-monitoring_server_read_appid(const char *path);
+monitoring_server_read_appid(const authum_path_t *path);
 
 /* steam.inf → "<PatchVersion>/Stdio" into @p out. False when missing. */
 authum_bool_t
-monitoring_server_read_version(const char *path, char *out, size_t out_size);
+monitoring_server_read_version(const authum_path_t *path, char *out, size_t out_size);
 
 #endif /* MONITORING_SERVER_H */
