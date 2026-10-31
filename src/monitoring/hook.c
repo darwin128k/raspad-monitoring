@@ -31,17 +31,14 @@
 #include <monitoring/reply.h>
 #include <monitoring/server.h>
 
+#include <authum/cstr.h>
 #include <authum/detour.h>
 #include <authum/logger.h>
+#include <authum/memory.h>
 #include <authum/symbol.h>
 
-#include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
-typedef int (*steam_handle_incoming_packet_fn)(const void *data, int len, uint32_t ip,
-                                               uint32_t port);
+typedef int (*steam_handle_incoming_packet_fn)(const void *data, int len, authum_u32_t ip,
+                                               authum_u32_t port);
 typedef void (*net_send_packet_fn)(int sock, int len, const void *data, monitoring_netadr_t to);
 typedef void (*svc_info_fn)(int detailed);
 typedef void (*svc_handler_fn)(void);
@@ -58,16 +55,16 @@ static svc_handler_fn g_svc_rule_info;
 static cvar_variable_string_fn g_cvar_variable_string;
 static monitoring_netadr_t *g_net_from;
 
-static uint8_t g_capture[MONITORING_REPLY_MAX];
-static size_t g_capture_len;
+static authum_u8_t g_capture[MONITORING_REPLY_MAX];
+static authum_usize_t g_capture_len;
 
 static authum_ptr
-monitoring_hook_resolve(const char *name)
+monitoring_hook_resolve(const authum_char_t *name)
 {
     authum_ptr address = authum_symbol_find_engine(name, authum_null);
 
     authum_logger_info(&g_monitoring_logger, "engine resolve: %s @ %x", name,
-                       (unsigned)(uintptr_t)address);
+                       (unsigned)(unsigned long)address);
     return address;
 }
 
@@ -77,15 +74,15 @@ monitoring_hook_capture_send(int sock, int len, const void *data, monitoring_net
 {
     (void)sock;
     (void)to;
-    if (len > 0 && (size_t)len <= sizeof g_capture)
+    if (len > 0 && (authum_usize_t)len <= sizeof g_capture)
     {
-        memcpy(g_capture, data, (size_t)len);
-        g_capture_len = (size_t)len;
+        authum_memory_copy(g_capture, data, (authum_usize_t)len);
+        g_capture_len = (authum_usize_t)len;
     }
 }
 
 /* SVC_Info(0) → 'C', SVC_Info(1) → 'm', into g_capture. 0 when SVC_Info bailed. */
-static size_t
+static authum_usize_t
 monitoring_hook_capture_info(int detailed)
 {
     g_capture_len = 0;
@@ -96,25 +93,28 @@ monitoring_hook_capture_info(int detailed)
 }
 
 /* Port the engine listens on: same precedence as NET_OpenIP. 0 = unknown. */
-static uint16_t
+static unsigned short
 monitoring_hook_server_port(void)
 {
-    static const char *const names[] = {"ip_hostport", "hostport", "port"};
-    const char *value;
-    int port;
-    size_t i;
+    static const authum_char_t *const names[] = {"ip_hostport", "hostport", "port"};
 
     if (!g_cvar_variable_string)
     {
         return 0u;
     }
-    for (i = 0; i < sizeof names / sizeof names[0]; i++)
+    for (authum_usize_t i = 0; i < sizeof names / sizeof names[0]; i++)
     {
-        value = g_cvar_variable_string(names[i]);
-        port = value ? atoi(value) : 0;
+        const authum_char_t *value = g_cvar_variable_string(names[i]);
+        authum_i32_t port = 0;
+
+        /* A cvar that is not a number is no port. */
+        if (value)
+        {
+            (void)authum_cstr_parse_i32(value, &port);
+        }
         if (port > 0 && port < 65536)
         {
-            return (uint16_t)port;
+            return (unsigned short)port;
         }
     }
     return 0u;
@@ -123,16 +123,17 @@ monitoring_hook_server_port(void)
 /* "ip:port" for 'C' / 'm': public_ip, else the `ip` cvar, else the machine's
  * one external IPv4; 0 = keep the engine's. */
 static int
-monitoring_hook_public_address(char *buf, size_t buf_size)
+monitoring_hook_public_address(authum_char_t *buf, authum_usize_t buf_size)
 {
-    const char *ip = g_monitoring_config.public_ip;
-    uint16_t port = monitoring_hook_server_port();
+    const authum_char_t *ip = g_monitoring_config.public_ip;
+    unsigned short port = monitoring_hook_server_port();
 
     if (!ip[0] && g_cvar_variable_string)
     {
         ip = g_cvar_variable_string("ip");
     }
-    if (!ip || !ip[0] || strcmp(ip, "localhost") == 0 || strcmp(ip, "0.0.0.0") == 0)
+    if (!ip || !ip[0] || authum_cstr_is_equal(ip, "localhost", authum_bool_false) ||
+        authum_cstr_is_equal(ip, "0.0.0.0", authum_bool_false))
     {
         ip = monitoring_server_detected_ip();
     }
@@ -140,27 +141,30 @@ monitoring_hook_public_address(char *buf, size_t buf_size)
     {
         return 0;
     }
-    snprintf(buf, buf_size, "%s:%u", ip, (unsigned)port);
+    authum_cstr_format(buf, buf_size, "%s:%u", ip, (unsigned)port);
     return 1;
 }
 
 static void
-monitoring_hook_send(const uint8_t *data, size_t len)
+monitoring_hook_send(const authum_u8_t *data, authum_usize_t len)
 {
     g_net_send_packet(MONITORING_NS_SERVER, (int)len, data, *g_net_from);
 }
 
 /* Send a captured 'C' / 'm', with the public address when we know it. */
 static void
-monitoring_hook_send_info(const uint8_t *data, size_t len)
+monitoring_hook_send_info(const authum_u8_t *data, authum_usize_t len)
 {
-    uint8_t reply[MONITORING_REPLY_MAX];
-    char address[96];
-    size_t reply_len = 0;
+    authum_u8_t reply[MONITORING_REPLY_MAX];
+    authum_usize_t reply_len = 0;
 
-    if (monitoring_hook_public_address(address, sizeof address))
     {
-        reply_len = monitoring_reply_set_address(data, len, address, reply, sizeof reply);
+        authum_char_t address[96];
+
+        if (monitoring_hook_public_address(address, sizeof address))
+        {
+            reply_len = monitoring_reply_set_address(data, len, address, reply, sizeof reply);
+        }
     }
     if (reply_len)
     {
@@ -176,8 +180,6 @@ monitoring_hook_send_info(const uint8_t *data, size_t len)
 static int
 monitoring_hook_answer_a2s_info(void)
 {
-    uint8_t reply[MONITORING_REPLY_MAX];
-    size_t reply_len;
     monitoring_info_answer_t answer = g_monitoring_config.info_answer;
 
     if (!monitoring_hook_capture_info(1))
@@ -187,9 +189,11 @@ monitoring_hook_answer_a2s_info(void)
 
     if (answer == monitoring_info_answer_new || answer == monitoring_info_answer_hybrid)
     {
-        reply_len = monitoring_reply_m_to_i(
-            g_capture, g_capture_len, (uint16_t)g_monitoring_config.appid,
+        authum_u8_t reply[MONITORING_REPLY_MAX];
+        authum_usize_t reply_len = monitoring_reply_m_to_i(
+            g_capture, g_capture_len, (unsigned short)g_monitoring_config.appid,
             g_monitoring_config.version, monitoring_hook_server_port(), reply, sizeof reply);
+
         if (!reply_len)
         {
             authum_logger_warning(&g_monitoring_logger,
@@ -227,7 +231,7 @@ monitoring_hook_enabled(monitoring_query_t query)
 }
 
 static int
-monitoring_hook_answer(monitoring_query_t query, uint32_t ip)
+monitoring_hook_answer(monitoring_query_t query, authum_u32_t ip)
 {
     if (!monitoring_hook_enabled(query))
     {
@@ -235,9 +239,9 @@ monitoring_hook_answer(monitoring_query_t query, uint32_t ip)
     }
 
     if (g_monitoring_config.info_answer_scope == monitoring_info_answer_scope_list &&
-        !monitoring_allowlist_contains(((uint32_t)g_net_from->ip[0] << 24) |
-                                       ((uint32_t)g_net_from->ip[1] << 16) |
-                                       ((uint32_t)g_net_from->ip[2] << 8) | g_net_from->ip[3]))
+        !monitoring_allowlist_contains(((authum_u32_t)g_net_from->ip[0] << 24) |
+                                       ((authum_u32_t)g_net_from->ip[1] << 16) |
+                                       ((authum_u32_t)g_net_from->ip[2] << 8) | g_net_from->ip[3]))
     {
         if (g_monitoring_config.debug)
         {
@@ -299,14 +303,15 @@ monitoring_hook_answer(monitoring_query_t query, uint32_t ip)
 }
 
 static int
-monitoring_hook_steam_handle_incoming_packet(const void *data, int len, uint32_t ip, uint32_t port)
+monitoring_hook_steam_handle_incoming_packet(const void *data, int len, authum_u32_t ip,
+                                             authum_u32_t port)
 {
     monitoring_query_t query = monitoring_query_other;
     int result;
 
     if (data && len > 0)
     {
-        query = monitoring_reply_classify((const uint8_t *)data, (size_t)len);
+        query = monitoring_reply_classify((const authum_u8_t *)data, (authum_usize_t)len);
     }
     if (monitoring_hook_answer(query, ip))
     {
@@ -322,8 +327,6 @@ monitoring_hook_steam_handle_incoming_packet(const void *data, int len, uint32_t
 int
 monitoring_hook_install(void)
 {
-    char address[96];
-
     if (g_incoming_detour.attached)
     {
         return 1;
@@ -361,15 +364,19 @@ monitoring_hook_install(void)
         return 0;
     }
     authum_logger_info(&g_monitoring_logger, "hook installed on Steam_HandleIncomingPacket @ %x",
-                       (unsigned)(uintptr_t)g_steam_handle_incoming_packet);
-    if (monitoring_hook_public_address(address, sizeof address))
+                       (unsigned)(unsigned long)g_steam_handle_incoming_packet);
     {
-        authum_logger_info(&g_monitoring_logger, "'C' / 'm' address: %s", address);
-    }
-    else
-    {
-        authum_logger_info(&g_monitoring_logger,
-                           "'C' / 'm' address: engine's own (set public_ip in monitoring.cfg)");
+        authum_char_t address[96];
+
+        if (monitoring_hook_public_address(address, sizeof address))
+        {
+            authum_logger_info(&g_monitoring_logger, "'C' / 'm' address: %s", address);
+        }
+        else
+        {
+            authum_logger_info(&g_monitoring_logger,
+                               "'C' / 'm' address: engine's own (set public_ip in monitoring.cfg)");
+        }
     }
     return 1;
 }

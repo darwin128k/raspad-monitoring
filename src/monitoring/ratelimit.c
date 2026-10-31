@@ -1,31 +1,29 @@
 #include <monitoring/ratelimit.h>
 
-#include <time.h>
+#include <authum/time.h>
 
 #define MONITORING_RATELIMIT_SLOTS 256u
 
 typedef struct monitoring_ratelimit_slot
 {
-    uint32_t ip;
-    time_t second;
-    int32_t count;
+    authum_u32_t ip;
+    authum_i64_t second;
+    authum_i32_t count;
 } monitoring_ratelimit_slot_t;
 
 static monitoring_ratelimit_slot_t g_slots[MONITORING_RATELIMIT_SLOTS];
 
 authum_bool_t
-monitoring_ratelimit_allow(uint32_t ip, int32_t per_second)
+monitoring_ratelimit_allow(authum_u32_t ip, authum_i32_t per_second)
 {
-    monitoring_ratelimit_slot_t *slot;
-    time_t now;
-
     if (per_second <= 0)
     {
         return authum_bool_true;
     }
 
-    now = time(NULL);
-    slot = &g_slots[(ip * 2654435761u) >> 24];
+    const authum_i64_t now = authum_time_now_seconds();
+    monitoring_ratelimit_slot_t *slot = &g_slots[(ip * 2654435761u) >> 24];
+
     if (slot->ip != ip || slot->second != now)
     {
         slot->ip = ip;

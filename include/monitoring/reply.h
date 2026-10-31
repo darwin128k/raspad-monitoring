@@ -1,8 +1,9 @@
 #ifndef MONITORING_REPLY_H
 #define MONITORING_REPLY_H
 
-#include <stddef.h>
-#include <stdint.h>
+#include <authum/byte.h>
+#include <authum/char.h>
+#include <authum/size.h>
 
 /* Largest connectionless datagram we build (engine's MAX_ROUTEABLE_PACKET). */
 #define MONITORING_REPLY_MAX 1400
@@ -22,9 +23,9 @@ typedef enum monitoring_query
 } monitoring_query_t;
 
 monitoring_query_t
-monitoring_reply_classify(const uint8_t *data, size_t len);
+monitoring_reply_classify(const authum_u8_t *data, authum_usize_t len);
 
-const char *
+const authum_char_t *
 monitoring_reply_query_name(monitoring_query_t query);
 
 /*
@@ -38,12 +39,14 @@ monitoring_reply_query_name(monitoring_query_t query);
  * address string replaced by @p address ("ip:port"). Returns the new length,
  * or 0 when @p in is not 'C' / 'm' or the result does not fit.
  */
-size_t
-monitoring_reply_set_address(const uint8_t *in, size_t in_len, const char *address, uint8_t *out,
-                             size_t out_size);
+authum_usize_t
+monitoring_reply_set_address(const authum_u8_t *in, authum_usize_t in_len,
+                             const authum_char_t *address, authum_u8_t *out,
+                             authum_usize_t out_size);
 
-size_t
-monitoring_reply_m_to_i(const uint8_t *m, size_t m_len, uint16_t appid, const char *version,
-                        uint16_t game_port, uint8_t *out, size_t out_size);
+authum_usize_t
+monitoring_reply_m_to_i(const authum_u8_t *m, authum_usize_t m_len, unsigned short appid,
+                        const authum_char_t *version, unsigned short game_port, authum_u8_t *out,
+                        authum_usize_t out_size);
 
 #endif /* MONITORING_REPLY_H */

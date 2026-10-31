@@ -1,7 +1,7 @@
 #ifndef MONITORING_ENGINE_H
 #define MONITORING_ENGINE_H
 
-#include <stdint.h>
+#include <authum/byte.h>
 
 /*
  * netadr_t from the engine's netadr.h (20 bytes, passed by value).
@@ -9,10 +9,11 @@
  */
 typedef struct monitoring_netadr
 {
-    int32_t type;
-    uint8_t ip[4];
-    uint8_t ipx[10];
-    uint16_t port;
+    authum_i32_t type;
+    authum_u8_t ip[4];
+    authum_u8_t ipx[10];
+    /* The engine's 16-bit port; the Authum facade has no 16-bit type. */
+    unsigned short port;
 } monitoring_netadr_t;
 
 _Static_assert(sizeof(monitoring_netadr_t) == 20, "netadr_t must stay 20 bytes");

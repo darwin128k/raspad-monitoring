@@ -66,14 +66,13 @@ authum_bool_t
 monitoring_command_list(const authum_command_t *cmd, authum_ptr user)
 {
     const monitoring_allowlist_entry_t *entry;
-    size_t i;
 
     (void)user;
     authum_command_printf(cmd, "monitoring: info_answer=%s scope=%s list=%s (%u entries)",
                           monitoring_info_answer_name(g_monitoring_config.info_answer),
                           monitoring_info_answer_scope_name(g_monitoring_config.info_answer_scope),
                           g_monitoring_config.monitorings, (unsigned)monitoring_allowlist_count());
-    for (i = 0; (entry = monitoring_allowlist_at(i)) != authum_null; i++)
+    for (authum_usize_t i = 0; (entry = monitoring_allowlist_at(i)) != authum_null; i++)
     {
         authum_command_printf(cmd, "  %u.%u.%u.%u/%u", (unsigned)(entry->net >> 24),
                               (unsigned)((entry->net >> 16) & 0xffu),
