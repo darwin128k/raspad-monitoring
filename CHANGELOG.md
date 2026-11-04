@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- `lib/authum` moves to Authum `e267fd0` (lh 0.4.0, `41ff0f80`): the host's
+  background tasks run on `lh/exec` executors with a bounded mailbox; the
+  module itself is unchanged.
 - Built on Authum 4.0.0 (module ABI 3.0.0); `lib/authum` tracks branch
   `4.0.0`. Needs a host with module ABI 3.0 — older hosts refuse the module.
 - Files are read through the Authum facade (`<authum/file.h>`): the allow list,
