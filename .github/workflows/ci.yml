@@ -60,3 +60,55 @@ jobs:
           name: monitoring-linux32-authum
           path: monitoring-linux32-authum.zip
           if-no-files-found: error
+
+  windows:
+    name: Windows i686 (MSYS2 MinGW)
+    runs-on: windows-2022
+    defaults:
+      run:
+        shell: msys2 {0}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install MSYS2 MINGW32
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW32
+          update: true
+          install: >-
+            mingw-w64-i686-gcc
+            mingw-w64-i686-cmake
+            mingw-w64-i686-ninja
+            zip
+
+      - name: Build
+        run: |
+          cmake -S . -B build-win32 -G Ninja -DCMAKE_BUILD_TYPE=Release
+          cmake --build build-win32 --target monitoring -j"$(nproc)"
+
+      - name: Pack Authum module layout
+        run: |
+          rm -rf dist-win
+          cmake --install build-win32 --component monitoring --prefix dist-win
+          printf 'monitoring\n' > dist-win/addons/authum/modules.list.example
+          cat > dist-win/addons/authum/modules/monitoring/INSTALL.txt <<'EOF'
+          Unpack into the game dir so paths match Authum:
+
+            addons\authum\modules\monitoring\monitoring.dll
+            addons\authum\modules\monitoring\monitoring.cfg
+            addons\authum\modules\monitoring\monitorings.ini
+
+          Ensure Authum is installed, then add a line to addons\authum\modules.list:
+            monitoring
+          EOF
+          sed -i 's/^          //' dist-win/addons/authum/modules/monitoring/INSTALL.txt
+          (cd dist-win && zip -r ../monitoring-win32-authum.zip addons)
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: monitoring-win32-authum
+          path: monitoring-win32-authum.zip
+          if-no-files-found: error
